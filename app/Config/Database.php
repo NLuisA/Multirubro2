@@ -35,7 +35,7 @@ class Database extends Config
         'hostname' => 'localhost',
         'username' => 'root',
         'password' => '',
-        'database' => 'multirubro',
+        'database' => 'multirubro2',
         'DBDriver' => 'MySQLi',
         'DBPrefix' => '',
         'pConnect' => false,
