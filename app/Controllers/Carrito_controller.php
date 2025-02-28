@@ -972,7 +972,7 @@ public function facturar($TA = null,$id_cabecera = null) {
                 <ar:Auth>
                     <ar:Token>' . $token . '</ar:Token>
                     <ar:Sign>' . $sign . '</ar:Sign>
-                    <ar:Cuit>20369557263</ar:Cuit>
+                    <ar:Cuit>27405910530</ar:Cuit>
                 </ar:Auth>
                 <ar:FeCAEReq>
         <ar:FeCabReq>
