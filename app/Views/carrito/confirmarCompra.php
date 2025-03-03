@@ -432,8 +432,8 @@ endif;
         let descuento = 0;
 
         if (seleccion === "Efectivo") {
-            descuento = granTotalOriginal * 0.05;
-            const totalConDescuentoCalculado = granTotalOriginal - descuento;
+            //descuento = granTotalOriginal * 0.05;
+            const totalConDescuentoCalculado = granTotalOriginal / 1.05;
             totalConDescuentoFila.style.display = "table-row";
             totalConDescuento.textContent = `$${totalConDescuentoCalculado.toFixed(2)}`;
             totalConDescuentoInput.value = totalConDescuentoCalculado.toFixed(2); // Actualiza el campo oculto
