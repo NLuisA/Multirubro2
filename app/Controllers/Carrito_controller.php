@@ -649,13 +649,13 @@ public function generarTicket($id_cabecera)
             <h3>Remito</h3>
             <p align="center">no valido como factura</p>
             <!-- Cabecera del ticket -->
-            <h1>MULTIRRUBRO BLASS</h1>
-            <p>GONZALEZ EMMANUEL ALEJANDRO</p>
-            <p>CUIT Nro: 20-36955726-3</p>
-            <p>Domicilio: Belgrano 2077, Corrientes (3400)</p>
+            <h1>MULTIRRUBRO BLASS 2</h1>
+            <p>CASTELLANO GRACIELA MAILLEN</p>
+            <p>CUIT Nro: 27-40591053-0</p>
+            <p>Domicilio: Independecia 4821 Corrientes (3400)</p>
             <p>Cel: 3794-095020</p>
             <p>Inicio de actividades: 01/02/2023</p>
-            <p>Ingresos Brutos: 20-36955726-3</p>
+            <p>Ingresos Brutos: 27-40591053-0</p>
             <p>Resp. Monotributo</p>
             <hr>
 
@@ -1145,13 +1145,13 @@ public function generarTicketFacturaC($id_cabecera)
     <body>
         <div class="ticket">
             <!-- Cabecera del ticket -->
-            <h1>MULTIRRUBRO BLASS</h1>
-            <p>GONZALEZ EMMANUEL ALEJANDRO</p>
-            <p>CUIT Nro: 20-36955726-3</p>
-            <p>Domicilio: Belgrano 2077, Corrientes (3400)</p>
+            <h1>MULTIRRUBRO BLASS 2</h1>
+            <p>CASTELLANO GRACIELA MAILLEN</p>
+            <p>CUIT Nro: 27-40591053-0</p>
+            <p>Domicilio: Independecia 4821, Corrientes (3400)</p>
             <p>Cel: 3794-095020</p>
             <p>Inicio de actividades: 01/02/2023</p>
-            <p>Ingresos Brutos: 20-36955726-3</p>
+            <p>Ingresos Brutos: 27-40591053-0</p>
             <p>Resp. Monotributo</p>
             <hr>
 
