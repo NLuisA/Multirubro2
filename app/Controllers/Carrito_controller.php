@@ -1175,7 +1175,11 @@ public function generarTicketFacturaC($id_cabecera)
 
             <!-- Totales -->
             <p>Subtotal sin descuentos: $<?= number_format($cabecera['total_venta'], 2) ?></p>
-            <p>Descuentos: <?= ($cabecera['tipo_pago'] == 'Efectivo') ? '$' . number_format($cabecera['total_venta'] * 0.05, 2) : '$0.00' ?></p>
+            <p>Descuento: 
+            <?= ($cabecera['tipo_pago'] == 'Efectivo') 
+                ? '$' . number_format($cabecera['total_venta'] - ($cabecera['total_venta'] / 1.05), 2) 
+                : '$0.00' ?>
+            </p>            
             <p>Total: $<?= number_format($cabecera['total_bonificado'], 2) ?></p>
             <hr>
             

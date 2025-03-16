@@ -1,5 +1,7 @@
 /writable/debugbar
 /writable/session
 /writable/logs
+/writable/facturacionARCA
+app/Libraries/afip
 COM3
 
