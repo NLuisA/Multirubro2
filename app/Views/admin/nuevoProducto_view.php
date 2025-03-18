@@ -92,11 +92,15 @@ $id = $session->get('id');
                 <div class="mb-2">
                     <label>Categoría</label>
                     <select name="categoria_id" class="form-control">
-                        <option value="">Seleccione Categoría</option>
-                        <?php foreach ($categorias as $categoria) : ?>
-                            <option value="<?= $categoria['categoria_id']; ?>"><?= $categoria['descripcion']; ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                            <option value="">Seleccione Categoría</option>
+                            <?php if (!empty($categorias)) : ?>
+                                <?php foreach ($categorias as $categoria) : ?>
+                                    <option value="<?= esc($categoria['categoria_id']); ?>"><?= esc($categoria['descripcion']); ?></option>
+                                <?php endforeach; ?>
+                            <?php else : ?>
+                                <option value="">No hay categorías disponibles</option>
+                            <?php endif; ?>
+                        </select>
                     <?= $validation->getError('categoria_id') ? "<div class='alert alert-danger mt-2'>{$validation->getError('categoria_id')}</div>" : "" ?>
                 </div>
 
