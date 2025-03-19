@@ -18,7 +18,10 @@ class Pedidos_controller extends Controller{
 
     public function ListarPedidos()
     {
+        
         $session = session();
+        //print_r($session->get());
+        //exit;
         // Verifica si el usuario está logueado
         if (!$session->has('id')) { 
             return redirect()->to(base_url('login')); // Redirige al login si no hay sesión
@@ -97,78 +100,6 @@ class Pedidos_controller extends Controller{
         }
 
 
-   //Verifica y guarda los pedidos
-   public function RegistrarPedido() {
-    $session = session();
-        // Verifica si el usuario está logueado
-        if (!$session->has('id')) { 
-            return redirect()->to(base_url('login')); // Redirige al login si no hay sesión
-        }
-    $input = $this->validate([
-        'nombre_cliente' => 'required|min_length[3]',
-        'telefono' => 'required|min_length[10]|max_length[10]|is_unique[cliente.telefono]',
-        'tipo_servicio' => 'required|max_length[13]'
-    ]);
-
-    $pedidosModel = new Pedidos_model();
-    $clienteModel = new Clientes_model();
-
-        if (!$input) {
-        $data['titulo'] = 'Registro Pedido'; 
-        echo view('navbar/navbar');
-        echo view('header/header', $data);                
-        echo view('pedidos/nuevoPedido_view', ['validation' => $this->validator]);
-        echo view('footer/footer');
-        } else {
-        date_default_timezone_set('America/Argentina/Buenos_Aires');
-        $fecha = date('d-m-Y');
-
-        // Validación y carga de la imagen
-        $validation = $this->validate([
-            'foto' => ['uploaded[foto]', 'mime_in[foto,image/jpg,image/jpeg,image/png]']
-        ]);
-
-        if ($validation) {
-            $img = $this->request->getFile('foto');
-            $nombre_aleatorio = $img->getRandomName();
-            $img->move(ROOTPATH . 'assets/uploads', $nombre_aleatorio);
-
-            $clienteModel->save([
-                'nombre' => $this->request->getVar('nombre_cliente'), 
-                'telefono' => $this->request->getVar('telefono'),
-                'foto' => $img->getName()
-            ]);
-        } else {
-            $clienteModel->save([
-                'nombre' => $this->request->getVar('nombre_cliente'), 
-                'telefono' => $this->request->getVar('telefono')
-            ]);
-        }
-
-        // Rescato el ID del cliente nuevo que se guardó para asignarle al pedidos
-        $id_cliente = $clienteModel->getInsertID();
-
-        // Convertir la fecha al formato dd-mm-yyyy
-        $fecha_turno = $this->request->getVar('fecha_turno');
-        $fecha_turno_formateada = date('d-m-Y', strtotime($fecha_turno));
-
-        // Guardar el pedido en la base de datos
-        $pedidosModel->save([
-            'id_cliente' => $id_cliente,
-            'id_usuario' => 1,
-            'fecha_registro' => $fecha,
-            'fecha_turno' => $fecha_turno_formateada,
-            'hora_turno' => $this->request->getVar('hora_turno'),
-            'id_servi' => $this->request->getVar('tipo_servicio'),
-            'estado' => 'Pendiente',
-        ]);
-
-        session()->setFlashdata('msg', 'Pedido Registrado!');
-        return redirect()->to(base_url('pedidos'));
-        }
-        }
-
-
     //Verifica y guarda los pedidos de clientes ya registrados
     public function pedidoClienteRegistrado() {
         $session = session();
@@ -214,41 +145,12 @@ class Pedidos_controller extends Controller{
          return redirect()->to($this->request->getHeader('referer')->getValue());
     }
 
-    //Actualiza el pedido
-    public function pedido_actualizar($id_pedido){ 
-        $session = session();
-        // Verifica si el usuario está logueado
-        if (!$session->has('id')) { 
-            return redirect()->to(base_url('login')); // Redirige al login si no hay sesión
-        }
-     // Cargar el modelo
-     $Pedido_model = new Pedidos_model();
-
-     // Capturar los datos enviados desde el formulario
-     $id_usuario = $this->request->getPost('id_usuario');
-     $hora_turno = $this->request->getPost('hora_turno');
-     $id_servi = $this->request->getPost('id_servi');
-
-     // Preparar los datos para actualizar
-     $data = array(
-         'id_usuario' => $id_usuario,
-         'hora_turno' => $hora_turno,
-         'id_servi' => $id_servi
-     );
-
-     // Actualizar en la base de datos
-     $Pedido_model->actualizar_pedido($id_pedido, $data);
-
-     // Redirigir a la lista de pedidos
-     session()->setFlashdata('msg', 'Pedido Actualizado!');
-     return redirect()->to($this->request->getHeader('referer')->getValue());
-    }
-
 
     public function cargar_pedido_en_carrito($id_pedido)
 {
     $session = session();
     $cart = \Config\Services::cart();
+    $US_model = new Usuarios_model();
     $detalle_model = new VentaDetalle_model();
     $cabecera_model = new Cabecera_model(); // Asegúrate de tener este modelo
     $producto_model = new Productos_model();
@@ -256,7 +158,11 @@ class Pedidos_controller extends Controller{
     // Obtener los datos de la cabecera de la venta para obtener el id_cliente
     $cabecera = $cabecera_model->find($id_pedido);
     if($cabecera['estado'] == 'Pendiente'){
+    $id_vendedor = $cabecera ? $cabecera['id_usuario'] : null;
+    $vendedor = $US_model->find($id_vendedor);
+    $nombre_vendedor = $vendedor ? $vendedor['nombre'] : 'No encontrado';
     $id_cliente = $cabecera ? $cabecera['id_cliente'] : null;
+    $nombre_cli = $cabecera ? $cabecera['nombre_prov_client'] : null; 
     $id_pedido = $cabecera ? $cabecera['id'] : null;
     $fecha_pedido = $cabecera ? $cabecera['fecha_pedido'] : null;
     $tipo_compra = $cabecera ? $cabecera['tipo_compra'] : null;
@@ -266,10 +172,14 @@ class Pedidos_controller extends Controller{
     // Guardar los datos en la sesión para no perderlos si el carrito queda vacío
     $session->set([
         'id_pedido' => $id_pedido,
-        'id_cliente_pedido' => $id_cliente,        
+        'id_cliente_pedido' => $id_cliente,
+        'nombre_cli' => $nombre_cli,
+        'id_vendedor' => $id_vendedor,
+        'nombre_vendedor' => $nombre_vendedor,        
         'fecha_pedido' => $fecha_pedido,
         'tipo_compra' => $tipo_compra,
-        'tipo_pago' => $tipo_pago
+        'tipo_pago' => $tipo_pago,
+        'estado' => 'Modificando'
     ]);
     // Obtener los productos del pedido
     $detalles = $detalle_model->where('venta_id', $id_pedido)->findAll();
@@ -281,15 +191,6 @@ class Pedidos_controller extends Controller{
     if (!$detalles) {
         session()->setFlashdata('error', 'No se encontraron productos en el pedido.');
         return redirect()->to($this->request->getHeader('referer')->getValue());
-    }
-
-    // Restaurar el stock de cada producto
-    foreach ($detalles as $detalle) {
-        $producto = $producto_model->find($detalle['producto_id']);
-        if ($producto) {
-            $nuevo_stock = $producto['stock'] + $detalle['cantidad'];
-            $producto_model->update($detalle['producto_id'], ['stock' => $nuevo_stock]);
-        }
     }
 
     // Actualizar el estado del pedido a "Modificando"
@@ -324,23 +225,10 @@ public function cancelar_edicion($id_pedido){
         //exit;
         $cart = \Config\Services::cart();
         $Cabecera_model = new Cabecera_model();
-        $VentaDetalle_model = new VentaDetalle_model();
-        $Producto_model = new Productos_model();
-
-        // Obtener detalles de los productos de la venta anterior
-        $detalles_venta_anterior = $VentaDetalle_model->where('venta_id', $id_pedido)->findAll();
-        
-        foreach ($detalles_venta_anterior as $detalle) {
-            // Restaurar el stock de los productos
-            $producto = $Producto_model->find($detalle['producto_id']);
-            if ($producto) {
-                $stock_edit = $producto['stock'] - $detalle['cantidad'];
-                $Producto_model->update($detalle['producto_id'], ['stock' => $stock_edit]);
-            }
-        }        
+            
         // Después de guardar el pedido (cuando ya no se necesiten los datos de la sesión)
         $session = session();
-        $session->remove(['id_cliente_pedido', 'id_pedido', 'fecha_pedido', 'tipo_compra', 'tipo_pago']);
+        $session->remove(['estado','id_vendedor', 'nombre_cli' ,'nombre_vendedor', 'id_cliente_pedido' , 'id_pedido', 'fecha_pedido','tipo_compra','tipo_pago','total_venta']);
         // Actualizar el estado del pedido a "Pendiente"
         $Cabecera_model->update($id_pedido, ['estado' => 'Pendiente']);
         $cart->destroy();

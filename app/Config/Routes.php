@@ -33,7 +33,30 @@ $routes->setAutoRoute(true);
 // route since we don't have to scan directories.
 $routes->get('/', 'Login_controller');
 
+//Rutas para el Cajero
+$routes->get('caja', 'Caja_controller::Caja');
+$routes->get('cargarVenta/(:num)', 'Caja_controller::CargarVenta/$1');
+$routes->get('cancelarCobro/(:num)', 'Caja_controller::CancelarCobro/$1');
+$routes->get('modificarVenta/(:num)', 'Caja_controller::cargar_Venta_en_Carrito/$1');
+$routes->get('cancelar_edicion_Venta/(:num)', 'Caja_controller::cancelar_edicion_Venta/$1');
+$routes->post('ventaModificada', 'Caja_controller::ModificarVenta');
+$routes->get('cancelarVenta/(:num)', 'Caja_controller::Venta_cancelar/$1');
+$routes->get('cobrarPedido/(:num)', 'Caja_controller::CargarVenta/$1');
+//Venta Sin Facturar
+$routes->get('modificarVenta_SF/(:num)', 'Caja_controller::cargar_Venta_Sin_Facturar/$1');
+$routes->get('cancelar_edicion_Venta_SF/(:num)', 'Caja_controller::cancelar_edicion_Venta_SF/$1');
+//Verificacion de codigo de acceso
+$routes->post('verificar-codigo', 'Caja_controller::verificarCodigo');
+
+//Productos Defectuosos
+$routes->get('descontarDefectuosos', 'Prod_Defectuosos_controller::MostrarLista_Prod');
+$routes->get('historial_Descuentos', 'Prod_Defectuosos_controller::MostrarHistorial_Descuentos');
+$routes->post('descontarDelStock', 'Prod_Defectuosos_controller::DescontarStock');
+$routes->get('descargar_comprobante_descuento', 'Prod_Defectuosos_controller::descargar_comprobante_descuento');
+$routes->post('Verif_Codigo_Descuento', 'Prod_Defectuosos_controller::Verif_Codigo_Descuento');
+
 //Todo sobre Pedidos
+$routes->get('cancelar_edicion/(:num)', 'Pedidos_controller::cancelar_edicion/$1');
 $routes->get('/pedidosCompletados', 'Pedidos_controller::PedidosCompletados');
 $routes->post('/filtrarPedidos', 'Pedidos_controller::filtrarPedidos');
 $routes->get('/pedidos', 'Pedidos_controller::ListarPedidos');
@@ -160,6 +183,8 @@ $routes->get('factura/(:num)', 'Carrito_controller::FacturaCliente/$1');
 //AFIP
 $routes->get('verificarTA','Carrito_controller::verificarTA');
 $routes->get('generarTicket', 'Carrito_controller::facturar');
+
+$routes->get('descargar_ticket', 'Carrito_controller::descargar_ticket');
 
 $routes->get('verificarTA/(:num)','Carrito_controller::verificarTA/$1');
 $routes->get('generarTicket/(:num)', 'Carrito_controller::generarTicket/$1');

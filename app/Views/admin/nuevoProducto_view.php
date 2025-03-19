@@ -67,7 +67,7 @@ $id = $session->get('id');
 
                 <div class="mb-2">
                     <label>Nombre</label>
-                    <input name="nombre" type="text" minlength="5" maxlength="20" required>
+                    <input name="nombre" type="text" minlength="5" maxlength="70" required>
                     <?= $validation->getError('nombre') ? "<div class='alert alert-danger mt-2'>{$validation->getError('nombre')}</div>" : "" ?>
                 </div>
             </div>
@@ -76,7 +76,7 @@ $id = $session->get('id');
             <div class="form-row">
                 <div class="mb-2">
                     <label>Descripción</label>
-                    <input name="descripcion" type="text" maxlength="20">
+                    <input name="descripcion" type="text" maxlength="100">
                     <?= $validation->getError('descripcion') ? "<div class='alert alert-danger mt-2'>{$validation->getError('descripcion')}</div>" : "" ?>
                 </div>
 
@@ -92,15 +92,11 @@ $id = $session->get('id');
                 <div class="mb-2">
                     <label>Categoría</label>
                     <select name="categoria_id" class="form-control">
-                            <option value="">Seleccione Categoría</option>
-                            <?php if (!empty($categorias)) : ?>
-                                <?php foreach ($categorias as $categoria) : ?>
-                                    <option value="<?= esc($categoria['categoria_id']); ?>"><?= esc($categoria['descripcion']); ?></option>
-                                <?php endforeach; ?>
-                            <?php else : ?>
-                                <option value="">No hay categorías disponibles</option>
-                            <?php endif; ?>
-                        </select>
+                        <option value="">Seleccione Categoría</option>
+                        <?php foreach ($categorias as $categoria) : ?>
+                            <option value="<?= $categoria['categoria_id']; ?>"><?= $categoria['descripcion']; ?></option>
+                        <?php endforeach; ?>
+                    </select>
                     <?= $validation->getError('categoria_id') ? "<div class='alert alert-danger mt-2'>{$validation->getError('categoria_id')}</div>" : "" ?>
                 </div>
 

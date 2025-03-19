@@ -25,8 +25,26 @@
         $session = session();
         $id_cliente_seleccionado = $session->get('id_cliente') ?? '';
         $id_pedido = $session->get('id_pedido') ?? '';
+        $estado = $session->get('estado') ?? '';
         ?>
+ <style>
+         /* Hacer el campo de búsqueda más largo y ancho */
+    .dataTables_filter input {
+        width: 300px; /* Ajusta el tamaño según sea necesario */
+        height: 55px; /* Ajusta la altura si lo deseas */
+        font-size: 20px; /* Tamaño de la fuente */
+        padding: 5px 10px; /* Añadir espacio dentro del campo */
+        border-radius: 5px; /* Bordes redondeados */
+        border: 1px solid #ccc; /* Borde gris claro */
+    }
 
+    /* Cambiar el color y hacer más nítida la letra del placeholder */
+    .dataTables_filter input::placeholder {
+        color: white; /* Cambiar a blanco */
+        opacity: 1; /* Asegura que el color del placeholder no sea opaco */
+        font-weight: bold; /* Hacer el texto más nítido */
+    }
+    </style>
 <div style="width: 100%;">
     <br>
 <h2 class="textoColor" align="center">Listado de todos los Pedidos Pendientes</h2>
@@ -69,7 +87,7 @@
         <td><?php echo $p['nombre_cliente']; ?></td>
         <td><?php echo $p['telefono']; ?></td>
         <td><?php echo $p['nombre_usuario'];?></td>
-        <td>$<?php echo $p['total_bonificado'];?></td>
+        <td>$<?php echo $p['total_venta'];?></td>
         <td><?php echo $p['fecha'];?></td>
         <td><?php echo $p['hora'];?></td>
         <td><?php echo $p['fecha_pedido'];?></td>
@@ -94,16 +112,18 @@
                 </a>
             </li>
             <li>
-                <?php if(!$id_pedido){?>
+                <?php if(($perfil == 3 || $perfil == 2) && $estado == ''){?>
                 <a href="<?php echo base_url('cargar_pedido/'.$p['id']); ?>">
                     ✏️ Modificar
                 </a>
                 <?php } ?>
             </li> 
             <li>
-                <a class="text-success btn" onclick="mostrarConfirmacion(event, <?php echo $p['id']; ?>)">
-                    ✅ Listo
+            <?php if($perfil == 3 && $estado == '') { ?>
+                <a class="text-success btn" href="<?php echo base_url('cobrarPedido/'.$p['id']);?>">
+                    ✅ Cobrar
                 </a>
+                <?php } ?>
             </li>
                 </ul>
             </div>
@@ -192,17 +212,7 @@ function cerrarConfirmacion() {
 
 
 
-<!-- Cuadro de confirmación Pedido Listo-->
-<div id="confirm-dialog" class="confirm-dialog" style="display: none;">
-    <div class="confirm-content btn2">
-        <p id="confirm-message">¿Cómo desea continuar?</p>
-        <div class="confirm-buttons">
-            <button id="confirm-factura" class="btn btn-yes" autofocus>Facturar C</button>
-            <button id="confirm-ticket" class="btn btn-no">Solo Ticket</button>
-            <button id="confirm-cancelar" class="btn btn-cancel">Cancelar</button>
-        </div>
-    </div>
-</div>
+
      
   </div>
 </div>
@@ -213,96 +223,57 @@ function cerrarConfirmacion() {
           <script type="text/javascript" src="<?php echo base_url('./assets/js/jquery.dataTables.min.js');?>"></script>
 <!-- Para la tabla de turnos-->
 <script>
-    $(document).ready( function () {
-      $('#users-list').DataTable( {
-        "language": {
-            "lengthMenu": "Mostrar _MENU_ registros por página.",
-            "zeroRecords": "Sin Resultados! No hay pedidos agendados.",
-            "info": "Mostrando la página _PAGE_ de _PAGES_",
-            "infoEmpty": "No hay registros disponibles.",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "search": "Buscar: ",
-            "paginate": {
-              "next": "Siguiente",
-              "previous": "Anterior"
-            }
+  $(document).ready(function () {
+    $('#users-list').DataTable({
+        "stateSave": true, // Habilitar el guardado del estado
+      "language": {
+        "lengthMenu": "Mostrar _MENU_ registros por página.",
+        "zeroRecords": "Sin Resultados! No hay pedidos agendados.",
+        "info": "Mostrando la página _PAGE_ de _PAGES_",
+        "infoEmpty": "No hay registros disponibles.",
+        "infoFiltered": "(filtrado de _MAX_ registros totales)",
+        "search": "Buscar: ",
+        "paginate": {
+          "next": "Siguiente",
+          "previous": "Anterior"
         }
-    } );
+      },
+      initComplete: function () {
+        // Agregar el placeholder personalizado al buscador
+        $('#users-list_filter input').attr('placeholder', 'Nro Pedido,cliente,estado,vendedor..');
+      }
     });
+  });
 
-
-    // Crear un objeto Date en UTC
+  // Crear un objeto Date en UTC
   const today = new Date();
 
-// Ajustar la hora a la zona horaria de Argentina (UTC-3)
-const options = { timeZone: 'America/Argentina/Buenos_Aires', hour12: false };
-const formatter = new Intl.DateTimeFormat('es-AR', {
+  // Ajustar la hora a la zona horaria de Argentina (UTC-3)
+  const options = { timeZone: 'America/Argentina/Buenos_Aires', hour12: false };
+  const formatter = new Intl.DateTimeFormat('es-AR', {
     ...options,
     year: 'numeric', month: '2-digit', day: '2-digit'
-});
+  });
 
-const formattedDate = formatter.format(today).split('/').reverse().join('-'); // Formato YYYY-MM-DD
+  const formattedDate = formatter.format(today).split('/').reverse().join('-'); // Formato YYYY-MM-DD
 
-// Formatear la hora en formato HH:MM
-const formattedTime = new Intl.DateTimeFormat('es-AR', {
+  // Formatear la hora en formato HH:MM
+  const formattedTime = new Intl.DateTimeFormat('es-AR', {
     ...options,
     hour: '2-digit',
     minute: '2-digit'
-}).format(today);
+  }).format(today);
 
-// Establecer la fecha y hora actuales en los campos correspondientes
-// Establecer la fecha mínima y el valor predeterminado
-const fechaInput = document.getElementById('fecha');
-fechaInput.setAttribute('min', formattedDate);
-fechaInput.setAttribute('value', formattedDate);
-//Rescata la hora del input por medio del id y asigna la hora actual (Lo mismo con la fecha)
-document.getElementById('hora').value = formattedTime;
+  // Establecer la fecha y hora actuales en los campos correspondientes
+  // Establecer la fecha mínima y el valor predeterminado
+  const fechaInput = document.getElementById('fecha');
+  fechaInput.setAttribute('min', formattedDate);
+  fechaInput.setAttribute('value', formattedDate);
 
+  // Rescatar la hora del input por medio del id y asignar la hora actual
+  document.getElementById('hora').value = formattedTime;
 </script>
 
-<!-- Esta parte es del cartel de confirmacion de Cancelar pedido o pedido Listo-->
-<script>
-
-function mostrarConfirmacion(event, id) {
-    event.preventDefault(); // Previene la acción por defecto del enlace
-    const confirmDialog = document.getElementById('confirm-dialog');
-    const confirmFactura = document.getElementById('confirm-factura');
-    const confirmTicket = document.getElementById('confirm-ticket');
-    const confirmCancelar = document.getElementById('confirm-cancelar');
-
-    // Muestra el cuadro de confirmación
-    confirmDialog.style.display = 'flex';
-    // Base URL desde PHP
-    let urlBase = "<?php echo base_url(); ?>";
-
-    // Facturar C -> Redirige a verificarTA con el ID
-    confirmFactura.onclick = function () {
-        window.location.href = `${"<?php echo base_url('verificarTA'); ?>"}/${id}`;
-    };
-
-    // Solo Ticket -> Redirige a generarTicket con el ID
-    confirmTicket.onclick = function () {
-        window.location.href = `${"<?php echo base_url('generarTicket'); ?>"}/${id}`;
-    };
-
-
-    // Cancelar -> Cierra el cuadro de confirmación
-    confirmCancelar.onclick = cerrarConfirmacion;
-
-    // Detectar la tecla Escape para cerrar el cuadro
-    document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-            cerrarConfirmacion();
-        }
-    }, { once: true }); // Elimina el evento después de ejecutarse una vez
-}
-
-// Función para cerrar el cuadro de confirmación
-function cerrarConfirmacion() {
-    document.getElementById('confirm-dialog').style.display = 'none';
-}    
-    
-</script>
 
 
 <!-- Buscador de clientes -->

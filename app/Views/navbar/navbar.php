@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multirrubro Blass</title>
+  <title>Multirrubro Blass 2</title>
   <link rel="icon" href="<?php echo base_url('./assets/img/iconMB2.png');?>">
   <link rel="stylesheet" href="<?php echo base_url('./assets/css/navbar.css');?>">
   <link rel="stylesheet" href="<?php echo base_url('./assets/css/clock.css');?>">
@@ -18,7 +18,9 @@
 <?php $session = session();
           $nombre= $session->get('nombre');
           $perfil=$session->get('perfil_id');
-          $id=$session->get('id');?>
+          $id=$session->get('id');
+          $estado =$session->get('estado'); 
+          ?>
 
 <section class="navBarSection">
     <div class="headernav">
@@ -38,17 +40,13 @@
 
         <div id="navBar" class="navBar">
             <ul class="navList flex">
-        <?php if( ($perfil =='1')) { ?>
+
+        <?php if( ($perfil =='1')) { ?>          
           
-          <li class="nnavItem">
-            <a href="<?= base_url('/catalogo')?>" class="btn">Productos</a>
-          </li>
-          <li class="navItem">
-          <a href="<?php echo base_url('CarritoList') ?>"> <img class="navImg"  src=" <?php echo base_url('assets/img/icons/iconMB2.png')?>"> </a>
-          </li>
           <li class="nnavItem">
             <a href="<?= base_url('pedidos')?>" class="btn">PEDIDOS</a>
           </li>
+       
           <li class="nnavItem">
             <a class="btn signUp" href="<?php echo base_url('compras');?>">VENTAS</a>
           </li>
@@ -68,13 +66,69 @@
           <a href="<?= base_url('/logout')?>" class="btn" onclick="return confirmarAccionSalir(event);">Salir</a>
           </li>
 
-          <?php } else if( (($perfil =='2')) ) { ?>
+          <?php } else if( (($perfil == 2 || $perfil == 3)) ) { ?>
           <li class="navItem">
-            <h5 class="colorTexto2"><?php echo "Bienvenido ".$nombre?></h5>
+          
+
+        <?php if ($estado): ?>
+        <?php 
+        $mensaje = "ATENCIÓN! Se está Procesando una Venta o Pedido";
+        $color = "orange"; // Color por defecto
+        $link = ""; // Variable para el enlace
+
+        switch ($estado) {
+            case 'Modificando':
+                $mensaje = "ATENCIÓN! Se está Modificando una Venta o Pedido";
+                $color = "#FF6700"; // Naranja neón
+                $link = base_url('CarritoList'); // Ruta del enlace
+                break;
+            case 'Modificando_SF':
+                $mensaje = "ATENCIÓN! Se está Modificando una Venta o Pedido";
+                $color = "#FF6700"; // Naranja neón
+                $link = base_url('CarritoList'); // Ruta del enlace
+                break;
+            case 'Cobrando':
+                $mensaje = "ATENCIÓN! Se está Cobrando una Venta o Pedido";
+                $color = "#00FF00"; // Verde neón
+                $link = base_url('casiListo'); // Ruta del enlace
+                break;
+        }
+        ?>
+
+        <h5 class="resaltado" style="
+        color: white; 
+        font-weight: bold; 
+        border: 1px solid <?php echo $color; ?>; 
+        padding: 7px; 
+        display: inline-block; 
+        border-radius: 5px; 
+        text-align: center;
+        text-transform: uppercase;
+        box-shadow: 0 0 3px <?php echo $color; ?>, 0 0 5px <?php echo $color; ?>;">
+        
+        
+            <a href="<?php echo $link; ?>" style="color: white; text-decoration: none;">
+                <?php echo $mensaje; ?>
+            </a>
+        
+
+        </h5>
+        <?php endif; ?>
+
+
+
           </li>
+          <?php if($perfil == 3) { ?>
+          <li class="nnavItem">
+            <a class="btn" href="<?php echo base_url('caja');?>">CAJA</a>            
+          </li>
+          <li class="nnavItem">
+            <a class="btn signUp" href="<?php echo base_url('compras');?>">VENTAS</a>
+          </li>          
           <li class="nnavItem">
             <a class="btn signUp" href="<?php echo base_url('clientes');?>">CLIENTES</a>
           </li>
+            <?php } ?>
           <li class="nnavItem">
             <a href="<?= base_url('/catalogo')?>" class="btn">Productos</a>
           </li>
@@ -101,6 +155,17 @@
         </div>
     </div>
 </section>
+
+<style>
+  .resaltado {
+    color: orange;
+    border: 2px solid orange;
+    padding: 10px;
+    display: inline-block;
+    border-radius: 5px;
+    text-align: center;
+}
+</style>
 
 <script>
   // Obtén el botón de hamburguesa y la barra de navegación

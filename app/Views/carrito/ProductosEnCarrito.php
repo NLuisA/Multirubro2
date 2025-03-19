@@ -6,13 +6,18 @@
         <?= session()->getFlashdata('msg') ?>
     </div>
 <?php endif; ?>
+
 <?php if (session("msgEr")): ?>
-    <div id="flash-message-danger" class="flash-message danger">
-        <?= session("msgEr"); ?>
+    <div id="flash-message-Error" class="flash-message danger">
+        <?php echo nl2br(session("msgEr")); ?>
+        <button class="close-btn" onclick="cerrarMensaje()">×</button>
     </div>
-<?php endif; ?>
+<?php endif; ?> 
 
 <script>
+    function cerrarMensaje() {
+        document.getElementById("flash-message-Error").style.display = "none";
+    }
     // Ocultar mensaje de éxito después de 3 segundos
     setTimeout(function() {
         const successMessage = document.getElementById('flash-message-success');
@@ -34,6 +39,11 @@
 <br>
 
 <style>
+@media (max-width: 768px) { /* Para dispositivos con ancho menor o igual a 768px (tablets y teléfonos) */
+    .ocultar-en-movil {
+        display: none;
+    }
+}
 
     /* Estilos generales de la tabla del carrito */
 .tabla-carrito {
@@ -70,6 +80,75 @@
     }
 }
 
+.resaltado {
+    color: orange;
+    border: 2px solid orange;
+    padding: 10px;
+    display: inline-block;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.contenedor {
+    text-align: center;
+}
+
+/*Estilos para el input de motivo*/
+.motivo {
+    width: 100%;
+    max-width: 750px;
+    padding: 8px;
+    border: 2px solid #50fa7b;
+    background-color: #282a36;
+    color: #f8f8f2;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 800px;
+    color:#ffff;
+}
+
+.motivo:focus {
+    outline: none;
+    border-color: #8be9fd;
+    box-shadow: 0 0 5px #8be9fd;
+}
+.total_ant {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px;
+    border: 2px solid #50fa7b;
+    background-color: #282a36;
+    color: #f8f8f2;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 800px;
+    color:#ffff;
+}
+
+.total_ant:focus {
+    outline: none;
+    border-color: #8be9fd;
+    box-shadow: 0 0 5px #8be9fd;
+}
+
+.diferencia_result {
+    width: 100%;
+    max-width: 450px;
+    padding: 8px;
+    border: 2px solid #50fa7b;
+    background-color: #282a36;
+    color: red;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: 800px;
+    color:#ffff;
+}
+
+.diferencia_result:focus {
+    outline: none;
+    border-color: #8be9fd;
+    box-shadow: 0 0 5px #8be9fd;
+}
 </style>
 
 
@@ -80,30 +159,62 @@
 $id_pedido = '';
 // Añadido para el tipo de compra
 $session = session();
-
+$perfil = $session->get('perfil_id');
 if (!empty($session)) {
     $id_pedido = $session->get('id_pedido');
+    $tipo_compra = $session->get('tipo_compra');
+    $estado = $session->get('estado');
+    $total_anterior = $session->get('total_bonificado');
 }
-//print_r($id_pedido);
+//print_r($perfil);
 //exit;
 ?>
 
 <div class="compados" style="width:100%;">
 
 <div class="" >
-        <div class = "">
-            <u><i><h2>Productos En Carrito</h2></i></u>
+<div class="contenedor">
+        <u><i><h2>Productos En Carrito</h2></i></u>
+        <br>
+        <?php if ($estado == 'Modificando'): ?>
+            <h3 class="resaltado">
+                Modificando Venta/Pedido Numero: <?php echo htmlspecialchars($id_pedido, ENT_QUOTES, 'UTF-8'); ?>
+            </h3>
+        <?php endif; ?>
+        <?php if ($estado == 'Modificando_SF'): ?>
+            <h4 class="resaltado">
+                "Importante!" Si se cambia un producto defectuosos por otro del mismo, ir al "Panel de descuento de Stock."
+            </h4>
+        <?php endif; ?>
         </div>
         <br>
         <div class="sinProductos" style="color:#ffff; " align="center" >
             <h2>
             <?php  
-            // Si el carrito está vacio, mostrar el siguiente mensaje
-            if (empty($carrito))
-            {
-                echo 'No hay productos agregados Todavia.!';                
-            }
-            ?>
+                if (empty($carrito)) {
+                    echo 'No hay productos agregados todavía.!<br><br>';
+                    
+                    if ($id_pedido > 0 && $tipo_compra == 'Pedido' && $estado == 'Modificando') { ?>
+                        <a href="<?php echo base_url('cancelar_edicion/' . $id_pedido); ?>" class="danger" onclick="return confirmarAccionPedido();">
+                            Cancelar Modificación Pedido
+                        </a>
+                        <br><br>
+                    <?php 
+                    } elseif ($perfil == 3 && $tipo_compra == 'Compra_Normal' && $estado == 'Modificando') { ?>
+                        <a href="<?php echo base_url('cancelar_edicion_Venta/' . $id_pedido); ?>" class="danger" onclick="return confirmarAccionVenta();">
+                            Cancelar Modificación Venta
+                        </a>
+                        <br><br>
+                    <?php  
+                    } elseif ($perfil == 3 && $estado == 'Modificando_SF') { ?>
+                        <a href="<?php echo base_url('cancelar_edicion_Venta_SF/' . $id_pedido); ?>" class="danger" onclick="return confirmarAccionVenta_SF();">
+                            Cancelar Cambios en Venta
+                        </a>
+                        <br><br>
+                    <?php 
+                    } 
+                } 
+                ?>
             </h2>
         </div>
    
@@ -119,11 +230,13 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
             if ($carrito):
             ?>
                 <tr class=" colorTexto2"  >
-                    <td>ID</td>
+                    <td class="ocultar-en-movil">ID</td>
                     <td>Nombre</td>
-                    <td class="ocultar-en-movil">Precio</td>
+                    <td>Precio</td>
+                    <td>Precio Efectivo(-10%)</td>
                     <td>Cantidad</td>
                     <td>Subtotal</td>
+                    <td>Sub.Tot. Efectivo(-10%)</td>
                     <td>Eliminar?</td>
                 </tr>
                 
@@ -141,16 +254,21 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
             ?>
                     <tr style="color: black;" >
                         
-                        <td  class="separador" style="color: #ffff;">
+                        <td  class="separador ocultar-en-movil" style="color: #ffff;">
                             <?php echo $i++; ?>
                         </td>
                         <td class="separador" style="color: #ffff;">
                             <?php echo $item['name']; ?>
                         </td>
-                        <td class="separador ocultar-en-movil"  style="color: #ffff;">
-                        $ARS <?php  echo number_format($item['price'], 2);?>
+
+                        <td class="separador"  style="color: #ffff;">
+                        $ <?php  echo number_format($item['price'], 2, ',', '.');?>
                         </td>
-                        
+
+                        <td class="separador"  style="color: #ffff;">
+                        $ <?php  echo number_format($item['price'] / 1.1, 2, ',', '.');?>
+                        </td>     
+
                         <td class="separador" style="color: #ffff;">
                         <?php 
                             if ($item['id'] < 10000) {
@@ -164,7 +282,7 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
                                     'style' => 'text-align: right; width: 50px;',
                                     'oninput' => "this.value = this.value.replace(/[^0-9]/g, '')"
                                 ]);?>
-                                <span class="stock-disponible"> (Disponibles: <?php echo  $item['options']['stock']; ?>) </span>
+                                <span class="stock-disponible"> (Mas <?php echo  $item['options']['stock']; ?> Disponibles ) </span>
                             <?php } else {
                                 echo number_format($item['qty']);
                             }
@@ -172,9 +290,15 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
                         </td>
                         
                             <?php $gran_total = $gran_total + $item['subtotal']; ?>
+
                         <td class="separador" style="color: #ffff;">
-                        $ARS <?php echo number_format($item['subtotal'], 2) ?>
+                        $ <?php echo number_format($item['subtotal'], 2, ',', '.'); ?>
                         </td>
+
+                        <td class="separador" style="color: #ffff;">
+                        $ <?php echo number_format($item['subtotal'] / 1.1, 2, ',', '.'); ?>
+                        </td>
+
                         <td class="imagenCarrito separador" style="color: #ffff;">
                             <?php // Imagen para Eliminar Item
                                 $path = '<img src= '. base_url('assets/img/icons/basura3.png') . ' width="10px" height="10px">';
@@ -188,50 +312,92 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
                 <?php
                 endforeach;
                 ?>
-                
-                <tr>
-                    <td>
-                        
-                        
-                    </td>
-                    
-                    <td colspan="5" align="right">
-                        <br>
-                        <h4 class="totalVenta">Total: $
-                            
-                            <?php //Gran Total
-                            echo number_format($gran_total, 2);
-                            ?>
-                            
-                        </h4>
+
+                    <?php if ($estado == 'Modificando_SF'): ?>
+                        <tr>
+                            <td></td>
+                            <td></td>
+                            <td colspan="6" align="right">
+                                <label style="color:orange;" for="motivo_cambio">Motivo de los cambios de la Venta:</label>
+                                <input class="motivo" type="text" id="motivo_cambio" name="motivo_modif" placeholder="Ingrese el motivo de los cambios">
+                                <h4 class="total_ant">Total Anterior: $
+                                    <?php //Gran Total
+                                    echo number_format($total_anterior, 2);
+                                    ?>                    
+                                </h4>
+                                <h4 class="total_ant" id="total_actual">Total Actual: $ <?php echo number_format($gran_total, 2); ?></h4>
+                                <label style="color:orange;" for="tipo_pago">Paga la Diferencia Con:</label>
+                                <select class="total_ant" id="tipo_pago" name="tipo_pago_dif" onchange="calcularDiferencia()">
+                                    <option value="Transferencia">Transferencia</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                </select>                                
+                                <h4 class="total_ant" id="diferencia">Diferencia: $ <?php echo number_format($gran_total - $total_anterior, 2); ?></h4>
+                                <?php if ($gran_total - $total_anterior < 0): ?>
+                                    <h3 style="color:#f42632;" class="diferencia_result">Atencion! La diferencia Resultó Plata a favor del Cliente.</h3>
+                                <?php endif; ?>
+                                                                
+                                <br>
+                                <h4 style="color:orange;">Si la Diferencia es Negativa, significa que es dinero a favor del Cliente.</h4>
+                            </td>       
+                        </tr>
+                    <?php endif; ?>
+
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td colspan="5" align="right">
+                        <?php if ($estado != 'Modificando_SF'): ?>                        
+                            <br>
+                            <h4 class="totalVenta">Total Actual: $
+                                <?php //Gran Total
+                                echo number_format($gran_total, 2);
+                                ?>
+                            </h4>
+                        <?php endif; ?>
 
                         <h4></h4>
                         <br>
                         <input type="hidden" id="accion" name="accion" value=""> <!-- Este campo controlará a qué función se envía -->
 
                         <!-- Cancelar edicion de pedido -->
-                        <?php if ($id_pedido) { ?>
+                        <?php if ($id_pedido > 0 && $tipo_compra == 'Pedido' && $estado == 'Modificando') { ?>
                             <a href="<?php echo base_url('cancelar_edicion/'.$id_pedido);?>" class="danger" onclick="return confirmarAccionPedido();">
-                                Cancelar Modificación
+                                Cancelar Modificación Pedido
                             </a>
-                            <?php } else {?>
-                            <!-- Borrar carrito usa mensaje de confirmacion -->
+                            <?php } else if ($perfil == 3 && $tipo_compra == 'Compra_Normal' && $estado == 'Modificando'){?>
+                                <a href="<?php echo base_url('cancelar_edicion_Venta/'.$id_pedido);?>" class="danger" onclick="return confirmarAccionVenta();">
+                                Cancelar Modificación Venta
+                                </a>
+                            <?php  } else if ($perfil == 3 && $estado == 'Modificando_SF'){?>
+                                <a href="<?php echo base_url('cancelar_edicion_Venta_SF/'.$id_pedido);?>" class="danger" onclick="return confirmarAccionVenta_SF();">
+                                Cancelar Cambios en Venta
+                                </a>
+                                <br><br>
+                            <?php  } else {  ?>
+                                <!-- Borrar carrito usa mensaje de confirmacion -->
                             <a href="<?php echo base_url('carrito_elimina/all');?>" class="danger" onclick="return confirmarAccionCompra();">
                                         Borrar Todo
                             </a>
                             <?php  } ?>
-
                         <!-- Submit boton. Actualiza los datos en el carrito -->
                         <button type="submit" class="success" onclick="setAccion('actualizar')">
                             Actualizar Importes
-                        </button>
-                        
-
+                        </button>                        
+                                
                             <br><br>
+                            <?php if(($tipo_compra == 'Pedido' || $perfil == 2) && ($estado == '' || $estado == 'Modificando')) { ?>
                         <!-- " Confirmar orden envia a carrito_controller/muestra_compra  -->
-                        <a href="javascript:void(0);" class="success" onclick="setAccion('confirmar')">Confirmar Compra</a>
+                        <a href="javascript:void(0);" class="success" onclick="setAccion('confirmar')">Continuar Compra</a>
+                                
+                        <?php }else if ($perfil == 3 && $tipo_compra == 'Compra_Normal' && $estado == 'Modificando'){ ?>            
+                        <!-- Envia los cambios y Modifica e impacta los cambios de la venta modificada -->
+                        <a href="javascript:void(0);" class="success" onclick="setAccion('modificar')">Modificar Venta</a>
 
-                        
+                        <?php } else if($perfil == 3 && $estado == 'Modificando_SF') {?>
+                        <!-- Envia los cambios y Modifica e impacta los cambios de la venta modificada -->
+                        <a href="javascript:void(0);" class="success" onclick="setAccion('GuardarCambios')">Guardar Cambios</a>      
+                            <?php } ?>
                     </td>
                 </tr>
                 <?php echo form_close();
@@ -251,6 +417,26 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
 
 </script>
 
+
+<script>
+    function calcularDiferencia() {
+        const tipoPago = document.getElementById('tipo_pago').value;
+        const granTotal = <?php echo $gran_total; ?>;
+        const totalAnterior = <?php echo $total_anterior; ?>;
+        let diferencia = granTotal - totalAnterior;
+
+        if (tipoPago === 'Efectivo') {
+            diferencia = diferencia / 1.1; // Aplicar descuento del 10% solo a la diferencia
+        }
+
+        // Mostrar la diferencia con el descuento aplicado (si corresponde)
+        document.getElementById('diferencia').innerText = `Diferencia: $${diferencia.toFixed(2)}`;
+    }
+</script>
+
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     function confirmarAccionCompra() {
@@ -269,6 +455,38 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
         return false; // Evita que el enlace siga su curso normal
     }
 
+    function confirmarAccionVenta() {
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Se cancelara la modificacion de la Venta y quedara como estaba.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, Cancelar Edicion",
+            cancelButtonText: "Volver"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "<?php echo base_url('cancelar_edicion_Venta/'.$id_pedido); ?>";
+            }
+        });
+        return false; // Evita que el enlace siga su curso normal
+    }
+
+    function confirmarAccionVenta_SF() {
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "Se cancelara la modificacion de la Venta y quedara como estaba.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, Cancelar Cambios",
+            cancelButtonText: "Volver"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = "<?php echo base_url('cancelar_edicion_Venta_SF/'.$id_pedido); ?>";
+            }
+        });
+        return false; // Evita que el enlace siga su curso normal
+    }
+
     
     function confirmarAccionPedido() {
         Swal.fire({
@@ -277,7 +495,7 @@ $gran_total = isset($gran_total) ? $gran_total : 0; // Si $gran_total no está d
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: "Sí, Cancelar",
-            cancelButtonText: "Cancelar"
+            cancelButtonText: "Volver"
         }).then((result) => {
             if (result.isConfirmed) {
                 window.location.href = "<?php echo base_url('cancelar_edicion/'.$id_pedido); ?>";

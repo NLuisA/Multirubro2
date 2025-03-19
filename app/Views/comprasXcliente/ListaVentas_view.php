@@ -1,17 +1,54 @@
 <?php $session = session();
           $nombre= $session->get('nombre');
           $perfil=$session->get('perfil_id');
-          $id=$session->get('id');?>
+          $id=$session->get('id');
+          $estado =$session->get('estado');
+          ?>
           <?php if (session()->getFlashdata('msg')): ?>
         <div id="flash-message" class="flash-message success">
             <?= session()->getFlashdata('msg') ?>
         </div>
-    <?php endif; ?>   
+    <?php endif; ?> 
+
+    <?php if (session("msgEr")): ?>
+    <div id="flash-message-Error" class="flash-message danger">
+        <?php echo session("msgEr"); ?>
+        <button class="close-btn" onclick="cerrarMensaje()">×</button>
+    </div>
+    <?php endif; ?>  
     <script>
         setTimeout(function() {
             document.getElementById('flash-message').style.display = 'none';
         }, 3000); // 3000 milisegundos = 3 segundos
+
+        function cerrarMensaje() {
+        document.getElementById("flash-message-Error").style.display = "none";
+        }
     </script>
+    
+    <style>
+         /* Hacer el campo de búsqueda más largo y ancho */
+    .dataTables_filter input {
+        width: 300px; /* Ajusta el tamaño según sea necesario */
+        height: 55px; /* Ajusta la altura si lo deseas */
+        font-size: 20px; /* Tamaño de la fuente */
+        padding: 5px 10px; /* Añadir espacio dentro del campo */
+        border-radius: 5px; /* Bordes redondeados */
+        border: 1px solid #ccc; /* Borde gris claro */
+    }
+
+    /* Cambiar el color y hacer más nítida la letra del placeholder */
+    .dataTables_filter input::placeholder {
+        color: white; /* Cambiar a blanco */
+        opacity: 1; /* Asegura que el color del placeholder no sea opaco */
+        font-weight: bold; /* Hacer el texto más nítido */
+    }
+
+    .espaciado {
+    padding: 0 7px;
+    }
+
+    </style>
 <section class="Fondo">
 <div class="" style="width: 100%;" align="center">
 <section class="contenedor-titulo">
@@ -33,7 +70,9 @@
             <option value="">Todos</option>
             <option value="Facturada" <?= ($filtros['estado'] ?? '') == 'Facturada' ? 'selected' : '' ?>>Facturada</option>
             <option value="Sin_Facturar" <?= ($filtros['estado'] ?? '') == 'Sin_Facturar' ? 'selected' : '' ?>>Sin_Facturar</option>
+            <option value="Modificada_SF" <?= ($filtros['estado'] ?? '') == 'Modificada_SF' ? 'selected' : '' ?>>Modificada_SF</option>
             <option value="Error_factura" <?= ($filtros['estado'] ?? '') == 'Error_factura' ? 'selected' : '' ?>>Error_factura</option>
+            <option value="Cancelado" <?= ($filtros['estado'] ?? '') == 'Cancelado' ? 'selected' : '' ?>>Cancelada</option>
         </select>
 
           <button type="submit" class="btn">Filtrar</button>
@@ -61,10 +100,11 @@
              <th>Cliente</th>
              <th>Vendedor</th>
              <th>Tipo Compra</th>
-             <th>ESTADO</th>
-             <th>Total Venta</th>
-             <th>Fecha</th>
-             <th>Hora</th>
+             <th>ESTADO</th>             
+             <th class="espaciado">Fecha Cobro/Original</th>           
+            <th class="espaciado" style="color:orange;">Fecha Cobro/Modif</th>
+            <th class="espaciado" style="color:orange;">Hora Cobro/Modif</th>
+            <th>Total Venta</th>
              <th>Tipo Pago</th>
              <th>Acciones</th>
           </tr>
@@ -73,16 +113,37 @@
           <?php if($ventas): ?>
           <?php foreach($ventas as $vta): ?>
           <tr>
-             <td><?php echo $vta['id']; ?></td>
-             <td><?php echo $vta['nombre_cliente']; ?></td>
-             <td><?php echo $vta['nombre_vendedor']; ?></td>
-             <td><?php echo $vta['tipo_compra']; ?></td>
-             <td><?php echo $vta['estado']; ?></td>
-             <td>$<?php echo $vta['total_bonificado']; ?></td>
-             <td><?php echo $vta['fecha'];?></td>
-             <td><?php echo $vta['hora']; ?></td>
-             <td><?php echo $vta['tipo_pago']; ?></td>
-             
+          <td><?php echo $vta['id']; ?></td>
+            <td><?php echo $vta['nombre_cliente']; ?></td>
+            <td><?php echo $vta['nombre_vendedor']; ?></td>
+            <td><?php echo $vta['tipo_compra']; ?></td>
+            <td style="background-color: <?php
+                if ($vta['estado'] == 'Cancelado') {
+                    echo 'red';
+                } elseif ($vta['estado'] == 'Sin_Facturar' || $vta['estado'] == 'Facturada') {
+                    echo 'green';
+                } elseif ($vta['estado'] == 'Modificada_SF') {
+                    echo 'orange';
+                } else {
+                    echo 'transparent'; // Fondo transparente si no coincide con ninguna condición
+                }
+            ?>; color: #ffff;"><?php echo $vta['estado']; ?></td>
+            <td><?php echo $vta['fecha_original']; ?></td>            
+            <td style="color:orange;"><?php echo $vta['fecha_actual']; ?></td>
+            <td style="color:orange;"><?php echo $vta['hora_actual']; ?></td>
+            <td style="background-color: <?php
+                if ($vta['estado'] == 'Cancelado') {
+                    echo 'red';
+                } elseif ($vta['estado'] == 'Sin_Facturar' || $vta['estado'] == 'Facturada') {
+                    echo 'green';
+                } elseif ($vta['estado'] == 'Modificada_SF') {
+                    echo 'orange';
+                } else {
+                    echo 'transparent'; // Fondo transparente si no coincide con ninguna condición
+                }
+            ?>; color: #ffff;">$<?php echo $vta['total_bonificado']; ?></td>
+            <td><?php echo $vta['tipo_pago']; ?></td>
+                        
              <td class="row">               
 
              <div class="dropdown">
@@ -98,34 +159,374 @@
                     <a class="btnDesplegable" style="color:#ffff; background:#3c3d3c; border-radius:10px; padding:8px;" href="<?php echo base_url('generarTicketFacturaC/'.$vta['id']); ?>">
                         Imp.Factura
                     </a>
-                <?php  } if($vta['estado'] == 'Sin_Facturar'){  ?>
+            </li>
+            <li>      
+                <?php  } if($vta['estado'] == 'Sin_Facturar' || $vta['estado'] == 'Modificada_SF'){  ?>
                     <a class="btnDesplegable" style="color:#ffff; background:#3c3d3c; border-radius:10px;  padding:8px;" href="<?php echo base_url('generarTicket/'.$vta['id']); ?>">
                         Imp.Ticket
                     </a>
+                </li>
+                <?php if($estado == '' && $perfil == 3) {?>
+                    <li>                
+                    <a class="btnDesplegable" style="color:#ffff; background:#3c3d3c; border-radius:10px; padding:8px;" 
+                    href="#" onclick="abrirModal('<?php echo base_url('modificarVenta_SF/'.$vta['id']); ?>'); return false;">
+                        Modificar
+                    </a>                
+                    </li>
+
+                    <li>                
+                    <a class="btnDesplegable" style="color:#ffff; background:#3c3d3c; border-radius:10px; padding:8px;" 
+                    href="#" onclick="abrirModalCancelar('<?php echo base_url('cancelarVenta/'.$vta['id']); ?>'); return false;">
+                        CancelarVta
+                    </a>                
+                    </li>
+
+                <?php  } ?>
+            <li>      
                 <?php } if($vta['estado'] == 'Error_factura') { ?>
                     <a class="btnDesplegable" style="color:#ffff; background:#3c3d3c; border-radius:10px; padding:8px;" href="<?php echo base_url('verificarTA/'.$vta['id']); ?>">
                         Re.Facturar
                     </a>
                 <?php } ?> 
-                 </li>                                  
+            </li>                                  
                     </ul>
                 </div>
 
               </td>
-              <?php if($vta['estado'] != 'Error_factura'){?>
-              <?php $TotalRecaudado = $TotalRecaudado + $vta['total_bonificado']; ?>
-              <?php } ?> 
+              <?php 
+                if ($vta['estado'] != 'Error_factura' && $vta['estado'] != 'Cancelado' && $vta['estado'] != 'Modificada_SF') { 
+                    $TotalRecaudado += $vta['total_bonificado']; 
+                } 
+
+                if ($vta['estado'] == 'Modificada_SF') { 
+                    if ($vta['fecha_original'] == $vta['fecha_actual']) { 
+                        // Si las fechas coinciden, sumar todo el total bonificado
+                        $TotalRecaudado += $vta['total_bonificado']; 
+                    } else { 
+                        // Si las fechas no coinciden, sumar solo la diferencia
+                        $TotalRecaudado += ($vta['total_bonificado'] - $vta['total_anterior']); 
+                    } 
+                } 
+                ?>
+
             </tr>
          <?php endforeach; ?>
          <?php endif; ?>
        
      </table>
-     <!-- Recaudacion de Ventas (Todas o por filtro)-->
-     <h2 class="estiloTurno textColor">Total Recaudado: $ <?php echo $TotalRecaudado ?> (Excluyendo las que dieron Error al Facturar)</h2>
+     <!-- Recaudacion de Ventas (Todas o por filtro)-->      
+     <h2 class="estiloTurno textColor">Total Recaudado: $ <?php echo $TotalRecaudado ?></h2>
+     <section class="estiloTurno textColor">
+     <h2>(No suman las Canceladas ni las que dieron Error_Factura)</h2>
+     <h2>Importante.! Si el estado es Modificada_SF y la venta original fue una fecha pasada, solo se suma la Diferencia entre Total Original menos el Total Modificado (Ver Detalles)</h2>
+     </section>
      <br>
   </div>
 </div>
 </section>
+
+<!-- Modal para CancelarVta -->
+<div id="modalCancelar" class="modal">
+    <div class="modal-contenido">
+        <span class="cerrar" onclick="cerrarModalCancelar()">&times;</span>
+        <h2 style="color: white;">Ingrese Código de Autorización.</h2>
+        <h2 style="color: orange;">Los productos seran devueltos al Stock y si hay DEFECTUOSOS descontarlos desde el Panel.</h2>
+        <input type="password" id="codigoInputCancelar" placeholder="Ingrese el código">
+        <button class="btn-confirmar" onclick="verificarCodigoCancelar()">Confirmar</button>
+    </div>
+</div>
+<script>
+    let urlRedireccion = ""; // Para almacenar la URL de redirección
+let urlRedireccionCancelar = ""; // Para almacenar la URL de redirección de CancelarVta
+
+// Funciones para el modal de Modificar
+function abrirModal(url) {
+    urlRedireccion = url; // Guarda la URL a la que se redirigirá después
+    document.getElementById("modalCodigo").style.display = "block";
+    document.getElementById("codigoInput").value = ""; // Limpia el input
+    document.getElementById("codigoInput").focus(); // Enfoca el campo de entrada
+}
+
+function cerrarModal() {
+    document.getElementById("modalCodigo").style.display = "none";
+}
+
+function verificarCodigo() {
+    const codigoIngresado = document.getElementById("codigoInput").value.trim();
+
+    fetch("<?= base_url('verificar-codigo') ?>", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `codigo=${codigoIngresado}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = urlRedireccion; // Redirige si el código es correcto
+        } else {
+            alert(data.message); // Mensaje desde el backend
+        }
+    })
+    .catch(error => console.error("Error en la verificación:", error));
+}
+
+// Funciones para el modal de CancelarVta
+function abrirModalCancelar(url) {
+    urlRedireccionCancelar = url; // Guarda la URL a la que se redirigirá después
+    document.getElementById("modalCancelar").style.display = "block";
+    document.getElementById("codigoInputCancelar").value = ""; // Limpia el input
+    document.getElementById("codigoInputCancelar").focus(); // Enfoca el campo de entrada
+}
+
+function cerrarModalCancelar() {
+    document.getElementById("modalCancelar").style.display = "none";
+}
+
+function verificarCodigoCancelar() {
+    const codigoIngresado = document.getElementById("codigoInputCancelar").value.trim();
+
+    fetch("<?= base_url('verificar-codigo') ?>", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `codigo=${codigoIngresado}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = urlRedireccionCancelar; // Redirige si el código es correcto
+        } else {
+            alert(data.message); // Mensaje desde el backend
+        }
+    })
+    .catch(error => console.error("Error en la verificación:", error));
+}
+
+// Permitir que presionar "Enter" envíe el código automáticamente
+document.getElementById("codigoInput").addEventListener("keyup", function(event) {
+    if (event.key === "Enter") { 
+        verificarCodigo();
+    }
+});
+
+document.getElementById("codigoInputCancelar").addEventListener("keyup", function(event) {
+    if (event.key === "Enter") { 
+        verificarCodigoCancelar();
+    }
+});
+
+// Cerrar modales al hacer clic fuera del contenido
+window.onclick = function(event) {
+    const modal = document.getElementById("modalCodigo");
+    const modalCancelar = document.getElementById("modalCancelar");
+    if (event.target === modal) {
+        cerrarModal();
+    }
+    if (event.target === modalCancelar) {
+        cerrarModalCancelar();
+    }
+};
+</script>
+<style>
+    /* Estilos del Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(53, 51, 51, 0.5);
+}
+
+/* Contenedor del Modal */
+.modal-contenido {
+    background-color: rgba(63, 117, 86, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 3px solid white; /* Borde blanco */
+}
+
+/* Botón de Cierre */
+.cerrar {
+    margin-top: -17px;
+    margin-right: -10px;
+    float: right;
+    font-size: 30px;
+    cursor: pointer;
+    color: red;
+    font-weight: bold;
+}
+
+/* Estilo del Input */
+#codigoInput, #codigoInputCancelar {
+    width: 90%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 2px solid white;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Botón Confirmar con efecto 3D */
+.btn-confirmar {
+    background: linear-gradient(to bottom, #808080 0%, #505050 100%);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Efecto 3D */
+    transition: all 0.2s ease-in-out;
+    font-weight: bold;
+}
+
+.btn-confirmar:hover {
+    background: linear-gradient(to bottom, #909090 0%, #606060 100%);
+    transform: translateY(3px); /* Efecto de presión */
+}
+</style>
+<!-- Modal -->
+<div id="modalCodigo" class="modal">
+    <div class="modal-contenido">
+        <span class="cerrar" onclick="cerrarModal()">&times;</span>
+        <h2 style="color: white;">Ingrese Código de Autorización</h2>
+        <input type="password" id="codigoInput" placeholder="Ingrese el código">
+        <button class="btn-confirmar" onclick="verificarCodigo()">Confirmar</button>
+    </div>
+</div>
+
+<style>
+/* Estilos del Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(53, 51, 51, 0.5);
+}
+
+/* Contenedor del Modal */
+.modal-contenido {
+    background-color: rgba(63, 117, 86, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
+    text-align: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 3px solid white; /* Borde blanco */
+}
+
+/* Botón de Cierre */
+.cerrar {
+    margin-top:-17px;
+    margin-right:-10px;
+    float: right;
+    font-size: 30px;
+    cursor: pointer;
+    color: red;
+    font-weight: bold;
+}
+
+/* Estilo del Input */
+#codigoInput {
+    width: 90%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 2px solid white;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Botón Confirmar con efecto 3D */
+.btn-confirmar {
+    background: linear-gradient(to bottom, #808080 0%, #505050 100%);
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5); /* Efecto 3D */
+    transition: all 0.2s ease-in-out;
+    font-weight: bold;
+}
+
+.btn-confirmar:hover {
+    background: linear-gradient(to bottom, #909090 0%, #606060 100%);
+    transform: translateY(3px); /* Efecto de presión */
+}
+</style>
+
+
+<script>
+let urlRedireccion = ""; // Para almacenar la URL de redirección
+
+function abrirModal(url) {
+    urlRedireccion = url; // Guarda la URL a la que se redirigirá después
+    document.getElementById("modalCodigo").style.display = "block";
+    document.getElementById("codigoInput").value = ""; // Limpia el input
+    document.getElementById("codigoInput").focus(); // Enfoca el campo de entrada
+}
+
+function cerrarModal() {
+    document.getElementById("modalCodigo").style.display = "none";
+}
+
+function verificarCodigo() {
+    const codigoIngresado = document.getElementById("codigoInput").value.trim();
+
+    fetch("<?= base_url('verificar-codigo') ?>", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `codigo=${codigoIngresado}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = urlRedireccion; // Redirige si el código es correcto
+        } else {
+            alert(data.message); // Mensaje desde el backend
+        }
+    })
+    .catch(error => console.error("Error en la verificación:", error));
+}
+
+// Permitir que presionar "Enter" envíe el código automáticamente
+document.getElementById("codigoInput").addEventListener("keyup", function(event) {
+    if (event.key === "Enter") { 
+        verificarCodigo();
+    }
+});
+
+// Cerrar modal al hacer clic fuera del contenido
+window.onclick = function(event) {
+    const modal = document.getElementById("modalCodigo");
+    if (event.target === modal) {
+        cerrarModal();
+    }
+};
+</script>
+
+
+
 
 <style>
   @media (max-width: 768px) { /* Aplica cambios en pantallas pequeñas */
@@ -148,46 +549,41 @@
           <script src="<?php echo base_url('./assets/js/jquery-3.5.1.slim.min.js');?>"></script>
           <link rel="stylesheet" type="text/css" href="<?php echo base_url('./assets/css/jquery.dataTables.min.css');?>">
           <script type="text/javascript" src="<?php echo base_url('./assets/js/jquery.dataTables.min.js');?>"></script>
-<script>
-    
-    $(document).ready( function () {
-      $('#users-list').DataTable( {
-        "stateSave": true, // Habilitar el guardado del estado
-        "order": [[0, "desc"]],
-        "language": {
-            "lengthMenu": "Mostrar _MENU_ registros por página.",
-            "zeroRecords": "Lo sentimos! No hay resultados.",
-            "info": "Mostrando la página _PAGE_ de _PAGES_",
-            "infoEmpty": "No hay registros disponibles.",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "search": "Buscar: ",
-            "paginate": {
-              "next": "Siguiente",
-              "previous": "Anterior"
-            }
+          <script>
+  $(document).ready(function () {
+    $('#users-list').DataTable({
+      "order": [[0, "desc"]],
+      "language": {
+        "lengthMenu": "Mostrar _MENU_ registros por página.",
+        "zeroRecords": "Lo sentimos! No hay resultados.",
+        "info": "Mostrando la página _PAGE_ de _PAGES_",
+        "infoEmpty": "No hay registros disponibles.",
+        "infoFiltered": "(filtrado de _MAX_ registros totales)",
+        "search": "Buscar: ",
+        "paginate": {
+          "next": "Siguiente",
+          "previous": "Anterior"
         }
-    } );
-    
-  } );
+      },
+      initComplete: function () {
+        // Agregar el placeholder personalizado al buscador
+        $('#users-list_filter input').attr('placeholder', 'Nro Venta,cliente,estado,vendedor..');
+      }
+    });
+  });
 
+  // Crear un objeto Date en UTC
+  const today = new Date();
 
-    // Crear un objeto Date en UTC
-    const today = new Date();
-
-// Ajustar la hora a la zona horaria de Argentina (UTC-3)
-const options = { timeZone: 'America/Argentina/Buenos_Aires', hour12: false };
-const formatter = new Intl.DateTimeFormat('es-AR', {
+  // Ajustar la hora a la zona horaria de Argentina (UTC-3)
+  const options = { timeZone: 'America/Argentina/Buenos_Aires', hour12: false };
+  const formatter = new Intl.DateTimeFormat('es-AR', {
     ...options,
     year: 'numeric', month: '2-digit', day: '2-digit'
-});
+  });
 
-const formattedDate = formatter.format(today).split('/').reverse().join('-'); // Formato YYYY-MM-DD
-
-
+  const formattedDate = formatter.format(today).split('/').reverse().join('-'); // Formato YYYY-MM-DD
 </script>
-
-
-
 
 
 <br><br>

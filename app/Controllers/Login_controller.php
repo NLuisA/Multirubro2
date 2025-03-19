@@ -3,7 +3,10 @@ namespace App\Controllers;
 use CodeIgniter\Controller;
 use App\Models\Usuarios_model;
 use App\Models\Sesion_model;
-  
+use App\Models\Cabecera_model;
+use App\Models\VentaDetalle_model;
+use App\Models\Productos_model;
+
 class Login_controller extends Controller
 {
     public function index()
@@ -62,8 +65,10 @@ class Login_controller extends Controller
                 $session->set($ses_data);
                 if($ses_data['perfil_id'] == 2){
                 return redirect()->to('catalogo');
+                }else if($ses_data['perfil_id'] == 3){
+                return redirect()->to('caja');
                 }else{
-                return redirect()->to('/Lista_Productos');
+                return redirect()->to('compras');   
                 }
             }}else{
                 $session->setFlashdata('msg', 'Password Incorrecta');
@@ -82,33 +87,46 @@ class Login_controller extends Controller
         $session = session();
         //CANCELAMOS LA MODIFICACION DEL PEDIDO ANTES DE SALIR, SI ES NECESARIO.
         $id_pedido = $session->get('id_pedido');
-        if($id_pedido){
+        $tipo_compra = $session->get('tipo_compra');
+        $estado = $session->get('estado');
+        $tiene_saldo_anterior = $session->get('total_anterior'); 
+
+        if($estado == 'Modificando_SF'){                   
+        $Cabecera_model = new Cabecera_model();
+        if($tiene_saldo_anterior != 0 || $tiene_saldo_anterior != null){ 
+            $Cabecera_model->update($id_pedido, ['estado' => 'Modificada_SF']);
+        }else {
+            $Cabecera_model->update($id_pedido, ['estado' => 'Sin_Facturar']);
+            }
+        }
+
+        if($estado == 'Modificando' && $tipo_compra == 'Pedido'){
         $cart = \Config\Services::cart();
         $Cabecera_model = new Cabecera_model();
-        $VentaDetalle_model = new VentaDetalle_model();
-        $Producto_model = new Productos_model();
-
-        // Obtener detalles de los productos de la venta anterior
-        $detalles_venta_anterior = $VentaDetalle_model->where('venta_id', $id_pedido)->findAll();
-        
-        foreach ($detalles_venta_anterior as $detalle) {
-            // Restaurar el stock de los productos
-            $producto = $Producto_model->find($detalle['producto_id']);
-            if ($producto) {
-                $stock_edit = $producto['stock'] - $detalle['cantidad'];
-                $Producto_model->update($detalle['producto_id'], ['stock' => $stock_edit]);
-            }
-        }        
+             
         // Después de guardar el pedido (cuando ya no se necesiten los datos de la sesión)
         $session = session();
-        $session->remove(['id_cliente_pedido', 'id_pedido', 'fecha_pedido', 'tipo_compra', 'tipo_pago']);
+        $session->remove(['id_vendedor', 'nombre_vendedor', 'id_cliente', 'id_pedido', 'fecha_pedido','tipo_compra','tipo_pago','total_venta']);
         // Actualizar el estado del pedido a "Pendiente"
         $Cabecera_model->update($id_pedido, ['estado' => 'Pendiente']);
-        $cart->destroy();
-        // Verifica si el usuario está logueado
-        if (!$session->has('id')) { 
-            return redirect()->to(base_url('login')); // Redirige al login si no hay sesión
+        $cart->destroy();        
         }
+        
+        //Si el $id_pedido es un id de compra normal vuelve el estado a Pendiente.
+        if($estado == 'Modificando' && $tipo_compra == 'Compra_Normal'){
+            $cart = \Config\Services::cart();
+            $Cabecera_model = new Cabecera_model();
+           
+            $Cabecera_model->update($id_pedido, ['estado' => 'Pendiente']);           
+            $session->remove(['id_vendedor', 'nombre_vendedor', 'id_cliente', 'id_pedido', 'fecha_pedido','tipo_compra','tipo_pago','total_venta']);
+        }
+        
+        if($estado == 'Cobrando'){
+        $cart = \Config\Services::cart();
+        $cart->destroy();
+        $Cabecera_model = new Cabecera_model();
+        $Cabecera_model->update($id_pedido, ['estado' => 'Pendiente']);           
+        $session->remove(['estado','id_vendedor', 'nombre_vendedor', 'id_cliente', 'id_pedido', 'fecha_pedido','tipo_compra','tipo_pago','total_venta']);
         }
          $registro_sesion = new Sesion_model();
          $id_sesion = $session->get('id_sesion'); 

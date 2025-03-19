@@ -42,6 +42,22 @@
         text-align: center;
     }
 }
+      /* Hacer el campo de búsqueda más largo y ancho */
+      .dataTables_filter input {
+        width: 300px; /* Ajusta el tamaño según sea necesario */
+        height: 55px; /* Ajusta la altura si lo deseas */
+        font-size: 20px; /* Tamaño de la fuente */
+        padding: 5px 10px; /* Añadir espacio dentro del campo */
+        border-radius: 5px; /* Bordes redondeados */
+        border: 1px solid #ccc; /* Borde gris claro */
+    }
+
+    /* Cambiar el color y hacer más nítida la letra del placeholder */
+    .dataTables_filter input::placeholder {
+        color: white; /* Cambiar a blanco */
+        opacity: 1; /* Asegura que el color del placeholder no sea opaco */
+        font-weight: bold; /* Hacer el texto más nítido */
+    }
 </style>
 
 <script>
@@ -72,9 +88,19 @@
 <section class="contenedor-titulo">
   <strong class="titulo-vidrio">ABM de Productos</strong>
   </section>
-<div style="width: 100%; text-align: end;">
   
-<br>
+<div style="width: 100%; text-align: end;">
+<div style="position: relative; width: 100%;">
+    <!-- Tu contenido actual aquí -->
+     <?php if($perfil == 1 || $perfil == 3){?>
+     <br><br><br><br>                   
+    <!-- Botón Descontar Defectuosos -->
+    <a class="btn" href="<?php echo base_url('descontarDefectuosos');?>" style="position: absolute; bottom: 0; right: 0; margin: 20px; color:red; font-weight: 900;">
+        Descontar Defectuosos
+    </a>
+    <?php  } ?>
+</div>
+
   <div class="dropdown2" style="margin-right: 45px;">
         <span class="dropdown-toggle2 btn">Mas Opciones▼</span>
         <ul class="dropdown-menu2">
@@ -110,7 +136,7 @@
        <thead>
           <tr class="colorTexto2">
              <th>Nombre</th>
-             <th>Precio</th>
+             <th>Precio Costo</th>
              <th>Precio Venta</th>
              <th>Categoría</th>
              <th>Imagen</th>
@@ -171,37 +197,40 @@
 <script type="text/javascript" src="<?php echo base_url('./assets/js/jquery.dataTables.min.js');?>"></script>
 
 <script>
-    
-    $(document).ready( function () {
-      $('#users-list').DataTable( {
+  $(document).ready(function () {
+    $('#users-list').DataTable({
         "stateSave": true, // Habilitar el guardado del estado
-        "language": {
-            "lengthMenu": "Mostrar _MENU_ registros por página.",
-            "zeroRecords": "Lo sentimos! No hay resultados.",
-            "info": "Mostrando la página  _PAGE_ de _PAGES_",
-            "infoEmpty": "No hay registros disponibles.",
-            "infoFiltered": "(filtrado de _MAX_ registros totales)",
-            "search": "Buscar: ",
-            "paginate": {
-              "next": "Siguiente",
-              "previous": "Anterior"
-            }
+      "language": {
+        "lengthMenu": "Mostrar _MENU_ registros por página.",
+        "zeroRecords": "Lo sentimos! No hay resultados.",
+        "info": "Mostrando la página _PAGE_ de _PAGES_",
+        "infoEmpty": "No hay registros disponibles.",
+        "infoFiltered": "(filtrado de _MAX_ registros totales)",
+        "search": "Buscar: ",
+        "paginate": {
+          "next": "Siguiente",
+          "previous": "Anterior"
         }
-    } );
-  } );
-
+      },
+      initComplete: function () {
+        // Agregar el placeholder personalizado al buscador
+        $('#users-list_filter input').attr('placeholder', 'Nombre,categoría,stock etc...');
+      }
+    });
+  });
 
   function formatearMiles() {
-        const input = document.getElementById('pago');
-        let valor = input.value.replace(/\./g, ''); // Quita los puntos
-        if (valor === '') {
-            input.value = '';
-            return;
-        }
-        valor = parseFloat(valor).toLocaleString('de-DE'); // Agrega el formato de miles con puntos
-        input.value = valor;
+    const input = document.getElementById('pago');
+    let valor = input.value.replace(/\./g, ''); // Quita los puntos
+    if (valor === '') {
+      input.value = '';
+      return;
     }
+    valor = parseFloat(valor).toLocaleString('de-DE'); // Agrega el formato de miles con puntos
+    input.value = valor;
+  }
 </script>
+
 <?php }else{ ?>
   <h2>Su perfil no tiene acceso a esta parte,
     Vuelva a alguna seccion de Empleado!

@@ -5,7 +5,7 @@ class Cabecera_model extends Model
 {
 	protected $table = 'ventas_cabecera';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['id_cae','id_usuario','fecha', 'hora_registro', 'hora' ,'id_cliente', 'total_venta', 'tipo_pago' , 'total_bonificado', 'tipo_compra', 'fecha_pedido','hora_entrega' , 'estado'];
+    protected $allowedFields = ['id_cae', 'costo_envio' ,'id_usuario','fecha', 'hora_registro', 'hora' ,'id_cliente', 'nombre_prov_client' , 'total_venta', 'tipo_pago' , 'total_bonificado', 'tipo_compra', 'fecha_pedido','hora_entrega' , 'estado', 'total_anterior', 'motivo'];
 
     public function getVentasCabecera(){
       $db = db_connect();
@@ -15,7 +15,7 @@ class Cabecera_model extends Model
       return $ventas;
     }
 
-    public function getVentasConClientes($filtros = [])
+    public function getVentasRegistradas($filtros = [])
     {
         // Conectarse a la base de datos
         $db = db_connect();
@@ -24,7 +24,7 @@ class Cabecera_model extends Model
         $builder = $db->table($this->table . ' u');
         $builder->select("
             u.id, 
-            c.nombre AS nombre_cliente, 
+            u.nombre_prov_client AS nombre_cliente, 
             v.nombre AS nombre_vendedor, 
             u.estado, 
             u.total_venta,
@@ -38,13 +38,16 @@ class Cabecera_model extends Model
                 ELSE u.hora 
             END) AS hora, 
             u.tipo_pago, 
-            u.total_bonificado
+            u.total_bonificado            
         ");
         $builder->join('cliente c', 'u.id_cliente = c.id_cliente');
         $builder->join('usuarios v', 'u.id_usuario = v.id');
-        $builder->whereNotIn('u.estado', ['Cancelado', 'Pendiente']);
-    
+        $builder->whereNotIn('u.estado', ['Cancelado', 'Cobrando']);
         // Aplicar filtros opcionales
+        if (!empty($filtros['tipo_compra'])) {
+            $builder->where('u.tipo_compra', $filtros['tipo_compra']);
+        }
+        
         if (!empty($filtros['estado'])) {
             $builder->where('u.estado', $filtros['estado']);
         }
@@ -71,6 +74,53 @@ class Cabecera_model extends Model
         $ventas = $builder->get();
         return $ventas->getResultArray();
     }
+
+    
+    public function getVentasConClientes($filtros = [])
+    {
+        // Conectarse a la base de datos
+        $db = db_connect();
+        
+        // Construir la consulta con el join
+        $builder = $db->table($this->table . ' u');
+        $builder->select("
+            u.id, 
+            c.nombre AS nombre_cliente, 
+            v.nombre AS nombre_vendedor, 
+            u.estado, 
+            u.total_venta,
+            u.tipo_compra,
+            u.fecha AS fecha_original,
+            u.hora AS hora_original,
+            u.fecha_pedido AS fecha_actual,
+            u.hora_entrega AS hora_actual, 
+            u.tipo_pago, 
+            u.total_bonificado,
+            u.total_anterior           
+        ");
+        $builder->join('cliente c', 'u.id_cliente = c.id_cliente');
+        $builder->join('usuarios v', 'u.id_usuario = v.id');
+        $builder->whereNotIn('u.estado', ['Pendiente']);
+    
+        // Aplicar filtros opcionales
+        if (!empty($filtros['estado'])) {
+            $builder->where('u.estado', $filtros['estado']);
+        }
+    
+        if (!empty($filtros['fecha_desde'])) {
+            $fechaDesde = date('Y-m-d', strtotime($filtros['fecha_desde']));
+            $builder->where("STR_TO_DATE(u.fecha_pedido, '%d-%m-%Y') >= ", $fechaDesde);
+        }
+        
+        if (!empty($filtros['fecha_hasta'])) {
+            $fechaHasta = date('Y-m-d', strtotime($filtros['fecha_hasta']));
+            $builder->where("STR_TO_DATE(u.fecha_pedido, '%d-%m-%Y') <= ", $fechaHasta);
+        }
+            
+        // Ejecutar la consulta y retornar el resultado como array
+        $ventas = $builder->get();
+        return $ventas->getResultArray();
+    }
     
 
     public function getVentasPorClienteYFecha($idCliente, $fechaHoy)
@@ -90,7 +140,7 @@ class Cabecera_model extends Model
     }
  
     public function getDetallesVenta($idVenta)
-{
+    {
     $db = db_connect();
     $builder = $db->table('ventas_detalle u');
     
@@ -99,11 +149,14 @@ class Cabecera_model extends Model
         d.nombre, 
         u.cantidad, 
         u.precio, 
-        u.total, 
+        u.total,
+        v.total_bonificado, 
+        v.motivo,
+        v.total_anterior,
         c.id_cae, 
         c.cae, 
         c.vto_cae
-    ');
+                  ');
     
     $builder->where('u.venta_id', $idVenta);
     
@@ -129,7 +182,18 @@ class Cabecera_model extends Model
      
          // Construir la consulta con los joins necesarios
          $builder = $db->table($this->table . ' u');
-         $builder->select('u.id, c.nombre AS nombre_cliente, c.telefono, u.total_venta, u.fecha, u.hora, u.tipo_pago, u.total_bonificado, u.estado, u.fecha_pedido, u.hora_entrega, usuarios.nombre AS nombre_usuario');
+         $builder->select('u.id, 
+         u.nombre_prov_client AS nombre_cliente, 
+         c.telefono, 
+         u.total_venta, 
+         u.fecha, 
+         u.hora, 
+         u.tipo_pago, 
+         u.total_bonificado,
+         u.estado,
+         u.fecha_pedido, 
+         u.hora_entrega, 
+         usuarios.nombre AS nombre_usuario');
          $builder->join('cliente c', 'u.id_cliente = c.id_cliente'); // Relación con cliente
          $builder->join('usuarios usuarios', 'u.id_usuario = usuarios.id'); // Relación con usuario
          $builder->where('u.tipo_compra', 'Pedido');
